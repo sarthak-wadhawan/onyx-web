@@ -34,11 +34,6 @@ export default function PlayPage() {
   const [orientation, setOrientation] = useState<'white' | 'black'>('white');
   const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const [isEngineThinking, setIsEngineThinking] = useState(false);
-export default function PlayPage() {
-  const [game, setGame] = useState<Chess>(() => new Chess());
-  const [position, setPosition] = useState<string>(() => game.fen());
-  const [orientation, setOrientation] = useState<'white' | 'black'>('white');
-  const [moveHistory, setMoveHistory] = useState<string[]>([]);
   const { getMove, isThinking, error, lastMove } = useEngine();
 
   // Stats (from engine)
@@ -97,36 +92,7 @@ export default function PlayPage() {
       // Optionally fallback to mock? We'll just show error in UI
     }
 
-  }, [game, isEngineThinking, updatePosition]);
-
-  // Trigger engine move (mock)
-  const triggerEngineMove = useCallback(async () => {
-    if (game.game_over() || isEngineThinking) return;
-    setIsEngineThinking(true);
-    // Use mock engine
-    const moveStr = await getMockEngineMove(game);
-    if (moveStr) {
-      // Parse the move string (e.g., "e2e4q")
-      const from = moveStr.substring(0, 2);
-      const to = moveStr.substring(2, 4);
-      const promotion = moveStr.length === 5 ? moveStr[4] : undefined;
-      const move = game.move({ from, to, promotion });
-      if (move) {
-        updatePosition();
-        // Update mock stats
-        setStats(prev => ({
-          ...prev,
-          nodes: prev.nodes + Math.floor(Math.random() * 1000) + 500,
-          nps: prev.nps + Math.floor(Math.random() * 200) - 100,
-          score: Math.floor(Math.random() * 200) - 50,
-          bestMove: from + to,
-          time: Math.floor(Math.random() * 150) + 50,
-          depth: Math.floor(Math.random() * 2) + 3,
-        }));
-      }
-    }
-    setIsEngineThinking(false);
-  }, [game, isEngineThinking, updatePosition]);
+  }, [game, isThinking, updatePosition]);
 
   // New game
   const handleNewGame = useCallback(() => {
@@ -234,4 +200,4 @@ export default function PlayPage() {
       </div>
     </>
   );
-}}
+}
