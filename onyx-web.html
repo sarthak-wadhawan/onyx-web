@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Onyx Chess · Engine + Interactive</title>
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+    <style>
+        /* ── reset / base ── */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #0b0d0f;
+            color: #e8edf2;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        /* ── scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #161a1f;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2f3a45;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a5a6a;
+        }
+
+        /* ── glass card ── */
+        .glass {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .glass-light {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        /* ── nav link ── */
+        .nav-link {
+            position: relative;
+            font-weight: 500;
+            font-size: 0.875rem;
+            color: #9aa7b5;
+            transition: color 0.2s ease;
+            padding: 0.25rem 0;
+        }
+        .nav-link:hover {
+            color: #f0f4f9;
+        }
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 0;
+            height: 1.5px;
+            background: #6b8cff;
+            transition: width 0.25s ease;
+        }
+        .nav-link:hover::after {
+            width: 100%;
+        }
+        .nav-link.active {
+            color: #f0f4f9;
+        }
+        .nav-link.active::after {
+            width: 100%;
+        }
+
+        /* ── hero gradient ── */
+        .hero-gradient {
+            background: radial-gradient(ellipse 80% 60% at 50% 20%, rgba(107, 140, 255, 0.10) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 50% at 80% 80%, rgba(107, 140, 255, 0.05) 0%, transparent 60%),
+                #0b0d0f;
+        }
+
+        /* ── code block ── */
+        .code-block {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.6;
+            background: #11161c;
+            border-radius: 12px;
+            padding: 1.25rem 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            overflow-x: auto;
+            color: #cfdce6;
+        }
+        .code-block .kw {
+            color: #ff79c6;
+        }
+        .code-block .fn {
+            color: #50fa7b;
+        }
+        .code-block .type {
+            color: #8be9fd;
+        }
+        .code-block .str {
+            color: #f1fa8c;
+        }
+        .code-block .cmt {
+            color: #6272a4;
+        }
+        .code-block .num {
+            color: #bd93f9;
+        }
+
+        /* ── misc ── */
+        .border-subtle {
+            border-color: rgba(255, 255, 255, 0.06);
+        }
+
+        .text-muted {
+            color: #9aa7b5;
+        }
+
+        .glow-blue {
+            box-shadow: 0 0 40px -8px rgba(107, 140, 255, 0.15);
+        }
+
+        /* ── responsive tweaks ── */
+        @media (max-width: 640px) {
+            .nav-link {
+                font-size: 0.75rem;
+            }
+            .code-block {
+                font-size: 0.7rem;
+                padding: 0.75rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─────────────────────────────────────── -->
+    <!--  NAVIGATION                            -->
+    <!-- ─────────────────────────────────────── -->
+    <header class="fixed top-0 left-0 right-0 z-50 glass border-b border-subtle">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- logo -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xl font-bold tracking-tight text-white">
+                        ♚ Onyx
+                    </span>
+                    <span class="text-xs font-medium text-muted bg-white/5 px-2 py-0.5 rounded-full border border-white/5">
+                        C++ Engine
+                    </span>
+                </div>
+
+                <!-- nav links (desktop) -->
+                <nav class="hidden md:flex items-center gap-6">
+                    <a href="#" class="nav-link active">Overview</a>
+                    <a href="#" class="nav-link">Play</a>
+                    <a href="#" class="nav-link">Architecture</a>
+                    <a href="#" class="nav-link">Move Gen</a>
+                    <a href="#" class="nav-link">Search</a>
+                    <a href="#" class="nav-link">Evaluation</a>
+                    <a href="#" class="nav-link">Performance</a>
+                    <a href="#" class="nav-link">Source</a>
+                </nav>
+
+                <!-- right actions -->
+                <div class="flex items-center gap-3">
+                    <a href="#"
+                    class="hidden sm:inline-flex items-center gap-1.5 text-sm font-medium text-white bg-white/10 hover:bg-white/20 px-4 py-2 rounded-full transition border border-white/5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-4m0 0l-4-4m4 4H4" />
+                    </svg>
+                    Play Engine
+                </a>
+                <button class="md:hidden p-2 text-muted hover:text-white transition">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- ─────────────────────────────────────── -->
+<!--  HERO                                  -->
+<!-- ─────────────────────────────────────── -->
+<section class="hero-gradient pt-28 pb-16 md:pt-36 md:pb-24 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <!-- left -->
+            <div>
+                <div class="inline-flex items-center gap-2 bg-white/5 border border-white/5 rounded-full px-4 py-1.5 text-xs font-medium text-muted mb-6">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400/70 animate-pulse"></span>
+                    C++ · Negamax · Alpha-Beta
+                </div>
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold tracking-tight leading-[1.1] text-white">
+                    Building a Chess Engine
+                    <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#6b8cff] to-[#a78bfa]">
+                        from Scratch
+                    </span>
+                </h1>
+                <p class="mt-5 text-lg text-muted max-w-lg leading-relaxed">
+                    A complete, self-contained chess engine written in C++ with negamax search,
+                    alpha-beta pruning, and PeSTO-style evaluation. Now running in your browser.
+                </p>
+                <div class="mt-8 flex flex-wrap gap-4">
+                    <a href="#"
+                    class="inline-flex items-center gap-2 bg-[#6b8cff] hover:bg-[#5a7ae8] text-white font-semibold px-6 py-3 rounded-full transition shadow-lg shadow-[#6b8cff]/20">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M10 20l4-4m0 0l-4-4m4 4H4" />
+                    </svg>
+                    Play the Engine
+                </a>
+                <a href="#"
+                class="inline-flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white font-medium px-6 py-3 rounded-full transition border border-white/10">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Explore How It Works
+            </a>
+        </div>
+        <!-- mini stats -->
+        <div class="mt-10 flex gap-8 text-sm">
+            <div>
+                <span class="block text-2xl font-bold text-white">~2,500</span>
+                <span class="text-muted">lines of C++</span>
+            </div>
+            <div>
+                <span class="block text-2xl font-bold text-white">4</span>
+                <span class="text-muted">search depth (configurable)</span>
+            </div>
+            <div>
+                <span class="block text-2xl font-bold text-white">♔</span>
+                <span class="text-muted">fully legal moves</span>
+            </div>
+        </div>
+    </div>
+    <!-- right: arch preview -->
+    <div class="relative">
+        <div class="glass rounded-2xl p-6 glow-blue border border-white/5">
+            <div class="flex items-center justify-between mb-4">
+                <span class="text-xs font-medium text-muted uppercase tracking-wider">Architecture</span>
+                <span class="text-xs text-muted">C++ → WebAssembly</span>
+            </div>
+            <div class="space-y-3">
+                <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                    <span class="text-lg">🧩</span>
+                    <div>
+                        <div class="text-sm font-medium text-white">Board Representation</div>
+                        <div class="text-xs text-muted">64‑int array · piece codes · game state</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                    <span class="text-lg">⚡</span>
+                    <div>
+                        <div class="text-sm font-medium text-white">Move Generation</div>
+                        <div class="text-xs text-muted">pseudo‑legal + legality filter · copy‑make</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                    <span class="text-lg">🔍</span>
+                    <div>
+                        <div class="text-sm font-medium text-white">Search</div>
+                        <div class="text-xs text-muted">Negamax · Alpha‑Beta · MVV‑LVA ordering</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5">
+                    <span class="text-lg">📊</span>
+                    <div>
+                        <div class="text-sm font-medium text-white">Evaluation</div>
+                        <div class="text-xs text-muted">PeSTO tables · material · positionnal</div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 bg-white/5 rounded-xl px-4 py-3 border border-white/5 border-emerald-500/20">
+                    <span class="text-lg">🌐</span>
+                    <div>
+                        <div class="text-sm font-medium text-white">UI Layer</div>
+                        <div class="text-xs text-muted">Next.js · Chessboard.js · Tailwind</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 pt-4 border-t border-white/5 flex justify-between text-xs text-muted">
+                <span>⬅️ from C++</span>
+                <span>➡️ to browser</span>
+            </div>
+        </div>
+        <!-- floating badge -->
+        <div class="absolute -bottom-3 -right-3 bg-[#1e2329] border border-white/10 rounded-full px-4 py-1.5 text-xs font-medium text-white shadow-lg">
+            ⚡ WASM ready
+        </div>
+    </div>
+</div>
+</div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<!--  PLAY PAGE PREVIEW (teaser)            -->
+<!-- ─────────────────────────────────────── -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h2 class="text-2xl sm:text-3xl font-bold text-white">Play the Engine</h2>
+                <p class="text-muted mt-1">Challenge the engine or analyze positions</p>
+            </div>
+            <a href="#" class="text-sm font-medium text-[#6b8cff] hover:text-[#5a7ae8] transition flex items-center gap-1">
+                Full page →
+            </a>
+        </div>
+
+        <!-- chessboard + panels mockup -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- board -->
+            <div class="lg:col-span-2">
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                    <div class="aspect-square max-w-[500px] mx-auto bg-[#1a1f26] rounded-xl flex items-center justify-center border border-white/5">
+                        <div class="text-center text-muted">
+                            <span class="text-5xl block mb-2">♔</span>
+                            <span class="text-sm">Chessboard.js will render here</span>
+                            <span class="block text-xs mt-1">interactive · draggable pieces</span>
+                        </div>
+                    </div>
+                    <!-- mini controls -->
+                    <div class="flex flex-wrap items-center justify-center gap-3 mt-4">
+                        <button class="text-xs font-medium bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition border border-white/5 text-muted hover:text-white">
+                            New Game
+                        </button>
+                        <button class="text-xs font-medium bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition border border-white/5 text-muted hover:text-white">
+                            Undo
+                        </button>
+                        <button class="text-xs font-medium bg-white/5 hover:bg-white/10 px-4 py-2 rounded-full transition border border-white/5 text-muted hover:text-white">
+                            Flip Board
+                        </button>
+                        <button class="text-xs font-medium bg-[#6b8cff]/20 hover:bg-[#6b8cff]/30 px-4 py-2 rounded-full transition border border-[#6b8cff]/30 text-[#6b8cff] font-semibold">
+                            Engine Move
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- side panels -->
+            <div class="space-y-4">
+                <!-- engine stats -->
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="text-xs font-medium text-muted uppercase tracking-wider">Engine Stats</span>
+                        <span class="text-xs bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">active</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-sm">
+                        <div><span class="text-muted">Depth</span> <span class="text-white font-medium ml-2">4</span></div>
+                        <div><span class="text-muted">Nodes</span> <span class="text-white font-medium ml-2">12.4k</span></div>
+                        <div><span class="text-muted">NPS</span> <span class="text-white font-medium ml-2">8.2k</span></div>
+                        <div><span class="text-muted">Score</span> <span class="text-white font-medium ml-2">+0.42</span></div>
+                    </div>
+                </div>
+
+                <!-- evaluation bar -->
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-medium text-muted uppercase tracking-wider">Evaluation</span>
+                        <span class="text-xs text-muted">+0.42</span>
+                    </div>
+                    <div class="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
+                        <div class="h-full w-[58%] bg-gradient-to-r from-[#6b8cff] to-[#a78bfa] rounded-full"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-muted mt-1.5">
+                        <span>Black</span>
+                        <span>White</span>
+                    </div>
+                </div>
+
+                <!-- move history (pgn) -->
+                <div class="glass rounded-2xl p-4 border border-white/5">
+                    <span class="text-xs font-medium text-muted uppercase tracking-wider">Move History</span>
+                    <div class="mt-2 text-xs text-muted font-mono leading-relaxed">
+                        1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 ...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<!--  EDUCATIONAL SECTIONS (preview)        -->
+<!-- ─────────────────────────────────────── -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+    <div class="max-w-7xl mx-auto">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+            <h2 class="text-2xl sm:text-3xl font-bold text-white">How It Works</h2>
+            <p class="text-muted mt-2">A deep dive into the engine's internals — from board representation to search.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- card 1 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#6b8cff]/10 flex items-center justify-center text-[#6b8cff] text-lg mb-4">🧩</div>
+                <h3 class="text-lg font-semibold text-white">Board Representation</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">64‑int array with piece codes, side to move, castling rights, en passant, and move clocks.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    int squares[64]; &nbsp; int side_to_move;
+                </div>
+            </div>
+            <!-- card 2 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#a78bfa]/10 flex items-center justify-center text-[#a78bfa] text-lg mb-4">⚡</div>
+                <h3 class="text-lg font-semibold text-white">Move Generation</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">Pseudo‑legal move generation with a legality filter using copy‑make and king‑safety checks.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    add_pawn_moves() · add_knight_moves()
+                </div>
+            </div>
+            <!-- card 3 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#50fa7b]/10 flex items-center justify-center text-[#50fa7b] text-lg mb-4">🔍</div>
+                <h3 class="text-lg font-semibold text-white">Negamax Search</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">Alpha‑beta pruning with MVV‑LVA move ordering. Depth‑4 search, configurable.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    negamax(depth, α, β) · order_moves()
+                </div>
+            </div>
+            <!-- card 4 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#f1fa8c]/10 flex items-center justify-center text-[#f1fa8c] text-lg mb-4">📊</div>
+                <h3 class="text-lg font-semibold text-white">PeSTO Evaluation</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">Material + piece‑square tables for middlegame and endgame, interpolated by phase.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    mg_score + eg_score · phase = 24
+                </div>
+            </div>
+            <!-- card 5 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#ff79c6]/10 flex items-center justify-center text-[#ff79c6] text-lg mb-4">📈</div>
+                <h3 class="text-lg font-semibold text-white">Performance</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">Nodes per second, depth reached, benchmark positions. Optimized with move ordering.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    ~8k NPS · depth 4 in &lt; 100ms
+                </div>
+            </div>
+            <!-- card 6 -->
+            <div class="glass rounded-2xl p-6 border border-white/5 hover:border-white/10 transition">
+                <div class="w-10 h-10 rounded-xl bg-[#8be9fd]/10 flex items-center justify-center text-[#8be9fd] text-lg mb-4">🌐</div>
+                <h3 class="text-lg font-semibold text-white">Web Integration</h3>
+                <p class="text-sm text-muted mt-2 leading-relaxed">C++ compiled to WebAssembly, bridged to Next.js + Chessboard.js UI.</p>
+                <div class="mt-4 text-xs font-mono text-muted bg-white/5 rounded-lg px-3 py-2 border border-white/5">
+                    WASM · Emscripten · React
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<!--  CODE SNIPPET (teaser)                 -->
+<!-- ─────────────────────────────────────── -->
+<section class="py-16 px-4 sm:px-6 lg:px-8 border-t border-white/5">
+    <div class="max-w-4xl mx-auto">
+        <div class="glass rounded-2xl p-6 md:p-8 border border-white/5">
+            <div class="flex items-center gap-3 mb-4">
+                <span class="text-sm font-medium text-white">🔧 Core Search</span>
+                <span class="text-xs text-muted bg-white/5 px-2 py-0.5 rounded-full">C++</span>
+            </div>
+            <div class="code-block">
+                <span class="cmt">// Negamax with alpha-beta pruning</span><br />
+                <span class="kw">static int</span> <span class="fn">negamax</span>(<span class="type">Board</span>&amp; b, <span class="kw">int</span> depth, <span class="kw">int</span> alpha, <span class="kw">int</span> beta) {<br />
+                &nbsp;&nbsp;nodes_count++;<br />
+                &nbsp;&nbsp;<span class="kw">if</span> (depth == <span class="num">0</span>) <span class="kw">return</span> <span class="fn">evaluate</span>(b);<br />
+                &nbsp;&nbsp;<span class="kw">auto</span> moves = <span class="fn">generate_legal_moves</span>(b);<br />
+                &nbsp;&nbsp;<span class="kw">if</span> (moves.empty()) {<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">return</span> <span class="fn">is_in_check</span>(b, b.side_to_move) ? <span class="num">-100000</span> + (<span class="num">100</span> - depth) : <span class="num">0</span>;<br />
+                &nbsp;&nbsp;}<br />
+                &nbsp;&nbsp;<span class="fn">order_moves</span>(moves, b);<br />
+                &nbsp;&nbsp;<span class="kw">for</span> (<span class="kw">const auto</span>&amp; m : moves) {<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="type">Board</span> copy = b;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="fn">make_move</span>(copy, m);<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">int</span> score = <span class="num">-</span><span class="fn">negamax</span>(copy, depth - <span class="num">1</span>, -beta, -alpha);<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (score &gt;= beta) <span class="kw">return</span> beta;<br />
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="kw">if</span> (score &gt; alpha) alpha = score;<br />
+                &nbsp;&nbsp;}<br />
+                &nbsp;&nbsp;<span class="kw">return</span> alpha;<br />
+                }
+            </div>
+            <div class="mt-4 text-xs text-muted flex items-center gap-4">
+                <span>⬅️ Alpha‑Beta pruning</span>
+                <span>•</span>
+                <span>MVV‑LVA move ordering</span>
+                <span>•</span>
+                <span>Copy‑make board state</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ─────────────────────────────────────── -->
+<!--  FOOTER                                -->
+<!-- ─────────────────────────────────────── -->
+<footer class="border-t border-white/5 py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2 text-sm text-muted">
+            <span class="font-bold text-white">♚ Onyx</span>
+            <span>·</span>
+            <span>Built with C++ · Next.js · Tailwind</span>
+        </div>
+        <div class="flex items-center gap-6 text-sm text-muted">
+            <a href="#" class="hover:text-white transition">GitHub</a>
+            <a href="#" class="hover:text-white transition">Docs</a>
+            <a href="#" class="hover:text-white transition">About</a>
+        </div>
+    </div>
+</footer>
+
+<!-- ─────────────────────────────────────── -->
+<!--  SIMPLE INTERACTIVE DEMO (nav highlight) -->
+<!-- ─────────────────────────────────────── -->
+<script>
+    // highlight active nav link on scroll (just for demo)
+    const links = document.querySelectorAll('.nav-link');
+    links.forEach(link => {
+        link.addEventListener('click', (e) => {
+            links.forEach(l => l.classList.remove('active'));
+            link.classList.add('active');
+        });
+    });
+
+    // mobile menu toggle (placeholder)
+    document.querySelector('button.md\\:hidden')?.addEventListener('click', () => {
+        alert('Mobile nav — expandable menu (to be implemented in Phase 2+)');
+    });
+</script>
+
+</body>
+</html>
