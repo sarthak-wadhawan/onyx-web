@@ -1,30 +1,41 @@
+// components/chess/EvaluationBar.tsx
 interface EvaluationBarProps {
-  score: number; // centipawns, positive = white advantage
+  score: number;
   sideToMove: 'w' | 'b';
 }
 
 export function EvaluationBar({ score, sideToMove }: EvaluationBarProps) {
-  // Map score to percentage (clamp between -1000 and 1000 centipawns)
   const clamped = Math.max(-1000, Math.min(1000, score));
-  const percentage = 50 + (clamped / 2000) * 50; // 0-100, 50 is equal
-  const barColor = score > 0 ? 'from-accent to-purple-400' : 'from-red-400 to-orange-400';
+  const percentage = 50 + (clamped / 2000) * 50;
   const barWidth = Math.min(100, Math.max(0, percentage));
+  const barColor = score > 0 ? 'from-accent to-purple-400' : 'from-red-400 to-orange-400';
 
   return (
-    <div className="glass rounded-2xl p-4 border border-border">
+    <div className="glass rounded-2xl p-4 border border-border bg-white/5 backdrop-blur-sm">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-muted uppercase tracking-wider">Evaluation</span>
-        <span className="text-xs text-muted">{score > 0 ? '+' : ''}{score/100}</span>
+        <span className="text-xs font-semibold text-muted uppercase tracking-wider">
+          Evaluation
+        </span>
+        <span className="text-xs font-mono text-white font-medium">
+          {score > 0 ? '+' : ''}{(score / 100).toFixed(2)}
+        </span>
       </div>
-      <div className="h-2.5 w-full bg-white/10 rounded-full overflow-hidden">
-        <div className={`h-full bg-gradient-to-r ${barColor} rounded-full`} style={{ width: `${barWidth}%` }} />
+      <div className="h-3 w-full bg-white/10 rounded-full overflow-hidden shadow-inner">
+        <div
+          className={`h-full bg-gradient-to-r ${barColor} rounded-full transition-all duration-500 ease-out`}
+          style={{ width: `${barWidth}%` }}
+        />
       </div>
-      <div className="flex justify-between text-[10px] text-muted mt-1.5">
-        <span>Black</span>
-        <span>White</span>
+      <div className="flex justify-between text-[10px] text-muted mt-1.5 px-0.5">
+        <span className="flex items-center gap-1">
+          <span className="w-2 h-2 rounded-full bg-red-400/60" /> Black
+        </span>
+        <span className="flex items-center gap-1">
+          White <span className="w-2 h-2 rounded-full bg-accent/60" />
+        </span>
       </div>
-      <div className="flex justify-between text-[10px] text-muted mt-1">
-        <span>{sideToMove === 'w' ? 'White to move' : 'Black to move'}</span>
+      <div className="flex justify-center text-[10px] text-muted/70 mt-1">
+        {sideToMove === 'w' ? 'White to move' : 'Black to move'}
       </div>
     </div>
   );

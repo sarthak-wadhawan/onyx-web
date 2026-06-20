@@ -8,11 +8,11 @@ const navItems = [
   { label: 'Overview', href: '/' },
   { label: 'Play', href: '/play' },
   { label: 'Architecture', href: '/architecture' },
-  { label: 'Move Gen', href: '/movegen' },
-  { label: 'Search', href: '/search' },
-  { label: 'Evaluation', href: '/eval' },
-  { label: 'Performance', href: '/perf' },
-  { label: 'Source', href: '/source' },
+  { label: 'Move Gen', href: '/learn/move-generation' },
+  { label: 'Search', href: '/learn/search' },
+  { label: 'Evaluation', href: '/learn/evaluation' },
+  { label: 'Performance', href: '/performance' },
+  { label: 'Source', href: 'https://github.com/your-repo/onyx', external: true },
 ];
 
 export function Navbar() {
@@ -37,6 +37,8 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
+                target={item.external ? '_blank' : undefined}
+                rel={item.external ? 'noopener noreferrer' : undefined}
                 className="nav-link text-sm font-medium text-muted hover:text-white transition"
               >
                 {item.label}
@@ -73,6 +75,8 @@ export function Navbar() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  target={item.external ? '_blank' : undefined}
+                  rel={item.external ? 'noopener noreferrer' : undefined}
                   className="text-sm font-medium text-muted hover:text-white transition px-2 py-1"
                   onClick={() => setIsOpen(false)}
                 >

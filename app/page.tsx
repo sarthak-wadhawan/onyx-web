@@ -5,6 +5,7 @@ import { AnimatedContainer } from '../components/animated-container';
 
 export default function Home() {
   return (
+    
     <>
       <Hero />
 

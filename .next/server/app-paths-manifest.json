@@ -1,5 +1,7 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/play/page": "app/play/page.js"
+  "/learn/evaluation/page": "app/learn/evaluation/page.js",
+  "/architecture/page": "app/architecture/page.js",
+  "/learn/move-generation/page": "app/learn/move-generation/page.js",
+  "/learn/search/page": "app/learn/search/page.js",
+  "/performance/page": "app/performance/page.js"
 }

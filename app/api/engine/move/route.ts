@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getEngineMove } from '@/lib/engine-wasm';
+import { createEngine } from '@/lib/engine';
 import { z } from 'zod';
 
 const moveRequestSchema = z.object({
@@ -15,7 +15,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
     const { fen, depth } = result.data;
-    const engineResult = await getEngineMove(fen, depth);
+
+    const engine = createEngine();
+    const engineResult = await engine.getMove(fen, { depth });
+
     return NextResponse.json({
       success: true,
       move: engineResult.move,

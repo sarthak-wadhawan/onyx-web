@@ -1,25 +1,35 @@
 {
   "pages": {
+    "/learn/evaluation/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/learn/evaluation/page.js"
+    ],
     "/layout": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/css/app/layout.css",
       "static/chunks/app/layout.js"
     ],
-    "/play/page": [
+    "/architecture/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/play/page.js"
+      "static/chunks/app/architecture/page.js"
     ],
-    "/page": [
+    "/learn/move-generation/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/page.js"
+      "static/chunks/app/learn/move-generation/page.js"
     ],
-    "/_not-found/page": [
+    "/learn/search/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/learn/search/page.js"
+    ],
+    "/performance/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/performance/page.js"
     ]
   }
 }

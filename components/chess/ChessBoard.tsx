@@ -1,51 +1,46 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { Chess } from 'chess.js';
+import { useEffect, useRef } from 'react';
 import Script from 'next/script';
 
 interface ChessBoardProps {
-  position: string; // FEN string
+  position: string;
   orientation: 'white' | 'black';
-  onMove: (from: string, to: string, promotion?: string) => void;
+  onMove: (from: string, to: string) => void;
   onFlip: () => void;
   disabled?: boolean;
 }
 
-export function ChessBoard({ position, orientation, onMove, onFlip, disabled }: ChessBoardProps) {
+export function ChessBoard({ position, orientation, onMove, disabled }: ChessBoardProps) {
   const boardRef = useRef<HTMLDivElement>(null);
   const boardInstance = useRef<any>(null);
-  const [scriptReady, setScriptReady] = useState(false);
 
-  // Initialize board once script is ready
   useEffect(() => {
-    if (!scriptReady || !boardRef.current) return;
+    // Only initialize if Chessboard exists (loaded by script)
+    const initBoard = () => {
+      const Chessboard = (window as any).Chessboard;
+      if (boardRef.current && Chessboard) {
+        boardInstance.current = Chessboard(boardRef.current, {
+          position: position,
+          orientation: orientation,
+          draggable: !disabled,
+          pieceTheme: 'https://chessboardjs.com/img/chesspieces/wikipedia/{piece}.png',
+          onDragStart: (source: string, piece: string, position: any, orientation: string) => {
+            if (disabled) return false;
+            const color = piece.charAt(0);
+            return (color === 'w' && orientation === 'white') || (color === 'b' && orientation === 'black');
+          },
+          onDrop: (source: string, target: string) => {
+            onMove(source, target);
+            return 'snapback';
+          },
+        });
+      }
+    };
 
-    const Chessboard = (window as any).Chessboard;
-    if (!Chessboard) return;
-
-    try {
-      boardInstance.current = Chessboard(boardRef.current, {
-        position: position,
-        orientation: orientation,
-        draggable: !disabled,
-        onDragStart: (source: string, piece: string, position: any, orientation: string) => {
-          // Prevent drag if disabled
-          if (disabled) return false;
-          // Only allow drag of own pieces
-          const color = piece.charAt(0);
-          return (color === 'w' && orientation === 'white') || (color === 'b' && orientation === 'black');
-        },
-        onDrop: (source: string, target: string) => {
-          onMove(source, target);
-          return 'snapback';
-        },
-        onSnapEnd: () => {
-          // Board animation complete
-        },
-      });
-    } catch (err) {
-      console.error('Failed to initialize chessboard:', err);
+    // Check if jQuery and Chessboard are already available
+    if ((window as any).jQuery && (window as any).Chessboard) {
+      initBoard();
     }
 
     return () => {
@@ -54,44 +49,43 @@ export function ChessBoard({ position, orientation, onMove, onFlip, disabled }: 
         boardInstance.current = null;
       }
     };
-  }, [scriptReady, disabled]);
-
-  // Update position when prop changes
-  useEffect(() => {
-    if (boardInstance.current) {
-      boardInstance.current.position(position);
-    }
-  }, [position]);
-
-  // Update orientation
-  useEffect(() => {
-    if (boardInstance.current) {
-      boardInstance.current.orientation(orientation);
-    }
-  }, [orientation]);
-
-  // Update disabled state (drag)
-  useEffect(() => {
-    if (boardInstance.current) {
-      boardInstance.current.draggable(!disabled);
-    }
-  }, [disabled]);
+  }, [position, orientation, disabled, onMove]); 
 
   return (
     <>
-      {/* Load chessboard.js from CDN */}
+      {/* 1. Load jQuery first (required dependency for chessboard.js) */}
       <Script
-        id="chessboard-js"
-        src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"
+        src="https://code.jquery.com/jquery-3.6.0.min.js"
         strategy="beforeInteractive"
-        onLoad={() => setScriptReady(true)}
       />
-      {/* Load chessboard.js CSS */}
+      {/* 2. Load chessboard.js after jQuery */}
+      <Script
+        src="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.js"
+        strategy="afterInteractive"
+        onLoad={() => {
+            // Re-initialize once script loads
+            const Chessboard = (window as any).Chessboard;
+            if (boardRef.current && Chessboard && !boardInstance.current) {
+                // We use a small timeout to ensure DOM is fully ready
+                setTimeout(() => {
+                    if (boardRef.current && !boardInstance.current) {
+                         boardInstance.current = Chessboard(boardRef.current, {
+                            position: position,
+                            orientation: orientation,
+                            draggable: !disabled,
+                         });
+                    }
+                }, 100);
+            }
+        }}
+      />
+      
       <link
         rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/chessboard-js/1.0.0/chessboard-1.0.0.min.css"
       />
-      <div ref={boardRef} className="w-full max-w-[500px] mx-auto" />
+      
+      <div ref={boardRef} className="w-full max-w-[500px] mx-auto aspect-square" />
     </>
   );
 }
